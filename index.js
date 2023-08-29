@@ -1,9 +1,17 @@
 const gameBoard = document.getElementById("game-board");
 const resetButton = document.getElementById("button-reset");
+const tileElements = document.querySelectorAll(".tile");
 const gridSize = 4;
+const maxAttempts = 10;
 const cellsCount = gridSize * gridSize;
 const initialTilesCount = 2;
 const cells = [];
+const swipeCalls = {
+    up: moveTilesUp,
+    down: moveTilesDown,
+    left: moveTilesLeft,
+    right: moveTilesRight,
+};
 
 let savedProgress = [];
 let isSwiped;
@@ -20,70 +28,19 @@ window.onload = function() {
     checkAndPromptGameProgress();
 }
 
-startGame();
-
-function startGame() {
-    createGrid(gameBoard, gridSize);
-    createInitialTiles();
-}
-
-function checkAndPromptGameProgress() {
-    const gameProgress = localStorage.getItem('savedProgress');
-
-    if (gameProgress !== null) {
-        const response = window.confirm('Restore the game progress?');
-
-        if (response) {
-            restoreGameProgress();
-        }
-        else {
-            localStorage.clear();
-        }
-    }
-}
-
-function restoreGameProgress() {
-    const savedProgressJSON = localStorage.getItem('savedProgress');
-
-    if (savedProgressJSON) {
-        const savedProgress = JSON.parse(savedProgressJSON);
-
-        clearBoard();
-
-        savedProgress.forEach(savedItem => {
-            const cell = cells.find(cell => cell.x === savedItem.x && cell.y === savedItem.y);я
-            if (cell && savedItem.value !== null) {
-                cell.linkedTile = { element: null, value: savedItem.value };
-                createTileAtPosition(cell, savedItem.value);
-                removeNullCells();
-            }
-        });
-
-        score = savedProgress[savedProgress.length - 1].score;
-        updateScoreDisplay();
-    }
-}
-
-function createTileAtPosition(cell, value) {
-    const tileElement = document.createElement("div");
-
-    tileElement.classList.add("tile");
-    setXY(tileElement, cell.x, cell.y);
-    setValue(tileElement, value);
-
-    cell.linkedTile = { element: tileElement, value: value };
-    cell.element.appendChild(tileElement);
-}
+gameBoard.addEventListener("touchstart", handleTouchStart);
+gameBoard.addEventListener("touchmove", handleTouchMove);
+gameBoard.addEventListener("touchend", handleTouchEnd);
 
 document.addEventListener("keydown", async (event) => {
     if (!isMoveAnyDirection()) {
-        const tileElements = document.querySelectorAll(".tile");
         for (const tileElement of tileElements) {
             await waitForTransitionEnd(tileElement);
         }
+
         alert("Game over!");
-        localStorage.clear();
         resetGame();
+
         return;
     }
 
@@ -104,27 +61,84 @@ document.addEventListener("keydown", async (event) => {
             return;
     }
 
-    const tileElements = document.querySelectorAll(".tile");
-    for (const tileElement of tileElements) {
-        await waitForTransitionEnd(tileElement);
-    }
-
     saveGameProgress();
 });
 
-const getXY = (e) => {
+resetButton.addEventListener("click", () => {
+    const confirmation = confirm("Are you sure you want to reset the game?");
+
+    if (confirmation) {
+        resetGame();
+    }
+});
+
+startGame();
+
+function startGame() {
+    createGrid(gameBoard, gridSize);
+    createInitialTiles();
+}
+
+function checkAndPromptGameProgress() {
+    const gameProgress = localStorage.getItem('savedProgress');
+
+    if (gameProgress !== null) {
+        const response = window.confirm('Restore the game progress?');
+
+        if (response) {
+            restoreGameProgress();
+        } else {
+            localStorage.clear();
+        }
+    }
+}
+
+function restoreGameProgress() {
+    const savedProgressJSON = localStorage.getItem('savedProgress');
+
+    if (savedProgressJSON) {
+        const savedProgress = JSON.parse(savedProgressJSON);
+
+        clearBoard();
+
+        savedProgress.forEach(savedItem => {
+            const cell = cells.find(cell => cell.x === savedItem.x && cell.y === savedItem.y);
+            removeNullCells();
+
+            if (cell && savedItem.value !== null) {
+                cell.linkedTile = { element: null, value: savedItem.value };
+                createTileAtPosition(cell, savedItem.value);
+            }
+        });
+
+        score = savedProgress[savedProgress.length - 1].score;
+        updateScoreDisplay();
+    }
+}
+
+function createTileAtPosition(cell, value) {
+    const tileElement = document.createElement("div");
+
+    tileElement.classList.add("tile");
+    setXY(tileElement, cell.x, cell.y);
+    setValue(tileElement, value);
+
+    cell.linkedTile = { element: tileElement, value: value };
+    cell.element.appendChild(tileElement);
+}
+
+function getXY (e)  {
     touchX = e.touches[0].pageX - rectLeft;
     touchY = e.touches[0].pageY - rectTop;
-};
-
-const handleTouchStart = (event) => {
+}
+function handleTouchStart (event) {
     isSwiped = true;
     getXY(event);
     initialX = touchX;
     initialY = touchY;
-};
+}
 
-const handleTouchMove = (event) => {
+function handleTouchMove (event) {
     if (!isMoveAnyDirection()) {
         alert("Game over!");
         resetGame();
@@ -139,24 +153,13 @@ const handleTouchMove = (event) => {
     }
 
     saveGameProgress();
-};
+}
 
-const handleTouchEnd = () => {
+function handleTouchEnd () {
     isSwiped = false;
     swipeCalls[swipeDirection]();
-    document.getElementById("score").innerText = score;
-};
-
-const swipeCalls = {
-    up: moveTilesUp,
-    down: moveTilesDown,
-    left: moveTilesLeft,
-    right: moveTilesRight,
-};
-
-gameBoard.addEventListener("touchstart", handleTouchStart);
-gameBoard.addEventListener("touchmove", handleTouchMove);
-gameBoard.addEventListener("touchend", handleTouchEnd);
+    updateScoreDisplay();
+}
 
 function saveGameProgress() {
     savedProgress = cells.map((cell) => ({
@@ -168,10 +171,6 @@ function saveGameProgress() {
     savedProgress.push({ score: score });
     localStorage.setItem('savedProgress', JSON.stringify(savedProgress));
 }
-
-resetButton.addEventListener("click", () => {
-    resetGame();
-});
 
 function resetGame() {
     clearBoard();
@@ -203,34 +202,38 @@ function createGrid(gridElement, gridSize) {
 
 function createCell(x, y) {
     const cellElement = document.createElement("div");
+
     cellElement.classList.add("cell");
+
     return { x, y, element: cellElement, linkedTile: null, linkedTileForMerge: null };
 }
 
 function createInitialTiles() {
     for (let i = 0; i < initialTilesCount; i++) {
-        createTile(gameBoard);
+        createTile(gameBoard, maxAttempts);
     }
 }
 
-function createTile(gridElement) {
+function createTile(gridElement, maxAttempts) {
     const tileElement = document.createElement("div");
-    tileElement.classList.add("tile");
     const emptyCell = getRandomEmptyCell();
+
+    tileElement.classList.add("tile");
 
     if (emptyCell) {
         emptyCell.linkedTile = { element: tileElement, value: Math.random() > 0.5 ? 2 : 4 };
         setXY(tileElement, emptyCell.x, emptyCell.y);
         setValue(tileElement, emptyCell.linkedTile.value);
         gridElement.appendChild(tileElement);
-    } else {
-        createTile(gridElement);
+    } else if (maxAttempts > 0) {
+        createTile(gridElement, maxAttempts - 1);
     }
 }
 
 function getRandomEmptyCell() {
     const emptyCells = cells.filter(cell => !cell.linkedTile);
     const randomIndex = Math.floor(Math.random() * emptyCells.length);
+
     return emptyCells[randomIndex];
 }
 
@@ -240,8 +243,9 @@ function setXY(tileElement, x, y) {
 }
 
 function setValue(tileElement, value) {
-    tileElement.textContent = value;
     const bgLightness = 100 - Math.log2(value) * 9;
+
+    tileElement.textContent = value;
     tileElement.style.setProperty("--bg-lightness", `${bgLightness}%`);
     tileElement.style.setProperty("--text-lightness", `${bgLightness < 50 ? 90 : 10}%`);
 }
@@ -259,56 +263,60 @@ async function moveTilesUp() {
     for (let x = 0; x < gridSize; x++) {
         for (let y = 1; y < gridSize; y++) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTile = currentCell.linkedTile;
 
-            if (currentCell.linkedTile) {
+            if (linkedTile) {
                 await moveTileInDirection(currentCell, x, y, -1, 0);
             }
         }
     }
 
-    createTile(gameBoard);
+    createTile(gameBoard, maxAttempts);
 }
 
 async function moveTilesDown() {
     for (let x = 0; x < gridSize; x++) {
         for (let y = gridSize - 2; y >= 0; y--) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTile = currentCell.linkedTile;
 
-            if (currentCell.linkedTile) {
+            if (linkedTile) {
                 await moveTileInDirection(currentCell, x, y, 1, 0);
             }
         }
     }
 
-    createTile(gameBoard);
+    createTile(gameBoard, maxAttempts);
 }
 
 async function moveTilesLeft() {
     for (let y = 0; y < gridSize; y++) {
         for (let x = 1; x < gridSize; x++) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTile = currentCell.linkedTile;
 
-            if (currentCell.linkedTile) {
+            if (linkedTile) {
                 await moveTileInDirection(currentCell, x, y, 0, -1);
             }
         }
     }
 
-    createTile(gameBoard);
+    createTile(gameBoard, maxAttempts);
 }
 
 async function moveTilesRight() {
     for (let y = 0; y < gridSize; y++) {
         for (let x = gridSize - 2; x >= 0; x--) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTile = currentCell.linkedTile;
 
-            if (currentCell.linkedTile) {
+            if (linkedTile) {
                 await moveTileInDirection(currentCell, x, y, 0, 1);
             }
         }
     }
 
-    createTile(gameBoard);
+    createTile(gameBoard, maxAttempts);
 }
 
 async function moveTileInDirection(currentCell, x, y, dirY, dirX) {
@@ -344,10 +352,10 @@ function mergeTiles(tile1, tile2) {
     tile1.linkedTile.value = newValue;
 
     setValue(tile1.linkedTile.element, newValue);
+    removeNullCells();
     removeTile(tile2);
 
     addScore(newValue);
-    removeNullCells();
 }
 
 function removeNullCells() {
@@ -371,11 +379,11 @@ function isMoveTilesUp() {
     for (let x = 0; x < gridSize; x++) {
         for (let y = 1; y < gridSize; y++) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTitle = currentCell.linkedTile;
+            const isTilesMove = isTilesMoveInDirection(currentCell, x, y, -1, 0);
 
-            if (currentCell.linkedTile) {
-                if (isTilesMoveInDirection(currentCell, x, y, -1, 0)) {
-                    return true;
-                }
+            if (linkedTitle && isTilesMove) {
+                return true;
             }
         }
     }
@@ -387,11 +395,11 @@ function isMoveTilesDown() {
     for (let x = 0; x < gridSize; x++) {
         for (let y = gridSize - 2; y >= 0; y--) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTitle = currentCell.linkedTile;
+            const isTilesMove = isTilesMoveInDirection(currentCell, x, y, 1, 0);
 
-            if (currentCell.linkedTile) {
-                if (isTilesMoveInDirection(currentCell, x, y, 1, 0)) {
-                    return true;
-                }
+            if (linkedTitle && isTilesMove) {
+                return true;
             }
         }
     }
@@ -403,11 +411,11 @@ function isMoveTilesLeft() {
     for (let y = 0; y < gridSize; y++) {
         for (let x = 1; x < gridSize; x++) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTitle = currentCell.linkedTile;
+            const isTilesMove = isTilesMoveInDirection(currentCell, x, y, 0, -1);
 
-            if (currentCell.linkedTile) {
-                if (isTilesMoveInDirection(currentCell, x, y, 0, -1)) {
-                    return true;
-                }
+            if (linkedTitle && isTilesMove) {
+                return true;
             }
         }
     }
@@ -419,11 +427,11 @@ function isMoveTilesRight() {
     for (let y = 0; y < gridSize; y++) {
         for (let x = gridSize - 2; x >= 0; x--) {
             const currentCell = cells[x + y * gridSize];
+            const linkedTitle = currentCell.linkedTile;
+            const isTilesMove = isTilesMoveInDirection(currentCell, x, y, 0, 1);
 
-            if (currentCell.linkedTile) {
-                if (isTilesMoveInDirection(currentCell, x, y, 0, 1)) {
-                    return true;
-                }
+            if (linkedTitle && isTilesMove) {
+                return true;
             }
         }
     }
@@ -434,11 +442,9 @@ function isMoveTilesRight() {
 function isTilesMoveInDirection(currentCell, x, y, dirX, dirY) {
     const targetX = x + dirX;
     const targetY = y + dirY;
+    const isTargetInBorders =  targetX >= 0 && targetX < gridSize && targetY >= 0 && targetY < gridSize
 
-    if (
-        targetX >= 0 && targetX < gridSize &&
-        targetY >= 0 && targetY < gridSize
-    ) {
+    if (isTargetInBorders) {
         const targetCell = cells[targetX + targetY * gridSize];
 
         return hasNoLinkedTile(targetCell) || isTilesMerge(targetCell, currentCell);
@@ -449,10 +455,10 @@ function isTilesMoveInDirection(currentCell, x, y, dirX, dirY) {
 
 function isTilesMerge(targetTile, currentTile) {
     return (
-        targetTile.linkedTile &&
-        currentTile.linkedTile &&
-        targetTile.linkedTile.value === currentTile.linkedTile.value &&
-        !targetTile.linkedTileForMerge
+        targetTile.linkedTile
+        && currentTile.linkedTile
+        && targetTile.linkedTile.value === currentTile.linkedTile.value
+        && !targetTile.linkedTileForMerge
     );
 }
 
@@ -463,13 +469,6 @@ function hasNoLinkedTile(cell) {
 function waitForTransitionEnd(tileElement, callback) {
     tileElement.addEventListener("transitionend", function onTransitionEnd() {
         tileElement.removeEventListener("transitionend", onTransitionEnd);
-        callback();
-    }, { once: true });
-}
-
-function waitForAnimationEnd(tileElement, callback) {
-    tileElement.addEventListener("animationend", function onAnimationEnd() {
-        tileElement.removeEventListener("animationend", onAnimationEnd);
         callback();
     }, { once: true });
 }

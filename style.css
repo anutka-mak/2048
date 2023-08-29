@@ -9,12 +9,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 120vh;
     flex-direction: column;
     gap: 2vmin;
 }
 
 .score-with-button {
+    padding-top: 2vmin;
     display: flex;
     justify-content: space-between;
     width: 60vmin;
