@@ -24,7 +24,7 @@ let rectLeft = gameBoard.getBoundingClientRect().left;
 let rectTop = gameBoard.getBoundingClientRect().top;
 let score = 0;
 
-window.onload = function() {
+window.onload = function () {
     checkAndPromptGameProgress();
 }
 
@@ -106,7 +106,7 @@ function restoreGameProgress() {
             removeNullCells();
 
             if (cell && savedItem.value !== null) {
-                cell.linkedTile = { element: null, value: savedItem.value };
+                cell.linkedTile = {element: null, value: savedItem.value};
                 createTileAtPosition(cell, savedItem.value);
             }
         });
@@ -123,22 +123,23 @@ function createTileAtPosition(cell, value) {
     setXY(tileElement, cell.x, cell.y);
     setValue(tileElement, value);
 
-    cell.linkedTile = { element: tileElement, value: value };
+    cell.linkedTile = {element: tileElement, value: value};
     cell.element.appendChild(tileElement);
 }
 
-function getXY (e)  {
+function getXY(e) {
     touchX = e.touches[0].pageX - rectLeft;
     touchY = e.touches[0].pageY - rectTop;
 }
-function handleTouchStart (event) {
+
+function handleTouchStart(event) {
     isSwiped = true;
     getXY(event);
     initialX = touchX;
     initialY = touchY;
 }
 
-function handleTouchMove (event) {
+function handleTouchMove(event) {
     if (!isMoveAnyDirection()) {
         alert("Game over!");
         resetGame();
@@ -155,7 +156,7 @@ function handleTouchMove (event) {
     saveGameProgress();
 }
 
-function handleTouchEnd () {
+function handleTouchEnd() {
     isSwiped = false;
     swipeCalls[swipeDirection]();
     updateScoreDisplay();
@@ -168,7 +169,7 @@ function saveGameProgress() {
         value: cell.linkedTile ? cell.linkedTile.value : null
     }));
 
-    savedProgress.push({ score: score });
+    savedProgress.push({score: score});
     localStorage.setItem('savedProgress', JSON.stringify(savedProgress));
 }
 
@@ -205,7 +206,7 @@ function createCell(x, y) {
 
     cellElement.classList.add("cell");
 
-    return { x, y, element: cellElement, linkedTile: null, linkedTileForMerge: null };
+    return {x, y, element: cellElement, linkedTile: null, linkedTileForMerge: null};
 }
 
 function createInitialTiles() {
@@ -221,7 +222,7 @@ function createTile(gridElement, maxAttempts) {
     tileElement.classList.add("tile");
 
     if (emptyCell) {
-        emptyCell.linkedTile = { element: tileElement, value: Math.random() > 0.5 ? 2 : 4 };
+        emptyCell.linkedTile = {element: tileElement, value: Math.random() > 0.5 ? 2 : 4};
         setXY(tileElement, emptyCell.x, emptyCell.y);
         setValue(tileElement, emptyCell.linkedTile.value);
         gridElement.appendChild(tileElement);
@@ -442,7 +443,7 @@ function isMoveTilesRight() {
 function isTilesMoveInDirection(currentCell, x, y, dirX, dirY) {
     const targetX = x + dirX;
     const targetY = y + dirY;
-    const isTargetInBorders =  targetX >= 0 && targetX < gridSize && targetY >= 0 && targetY < gridSize
+    const isTargetInBorders = targetX >= 0 && targetX < gridSize && targetY >= 0 && targetY < gridSize
 
     if (isTargetInBorders) {
         const targetCell = cells[targetX + targetY * gridSize];
@@ -470,5 +471,5 @@ function waitForTransitionEnd(tileElement, callback) {
     tileElement.addEventListener("transitionend", function onTransitionEnd() {
         tileElement.removeEventListener("transitionend", onTransitionEnd);
         callback();
-    }, { once: true });
+    }, {once: true});
 }
