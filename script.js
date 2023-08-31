@@ -70,7 +70,6 @@ async function handleInput(event) {
     await newTile.waitForAnimationEnd()
     alert("Game over!")
     localStorage.clear();
-
     return;
   }
 
@@ -87,25 +86,25 @@ function resetGame() {
 }
 
 async function moveUp() {
-  await slideTiles(grid.cellsGroupedByColumn);
+  await moveTiles(grid.cellsGroupedByColumn);
 }
 
 async function moveDown() {
-  await slideTiles(grid.cellsGroupedByReversedColumn);
+  await moveTiles(grid.cellsGroupedByReversedColumn);
 }
 
 async function moveLeft() {
-  await slideTiles(grid.cellsGroupedByRow);
+  await moveTiles(grid.cellsGroupedByRow);
 }
 
 async function moveRight() {
-  await slideTiles(grid.cellsGroupedByReversedRow);
+  await moveTiles(grid.cellsGroupedByReversedRow);
 }
 
-async function slideTiles(groupedCells) {
+async function moveTiles(groupedCells) {
   const promises = [];
 
-  groupedCells.forEach(group => slideTilesInGroup(group, promises));
+  groupedCells.forEach(group => moveTilesInGroup(group, promises));
 
   await Promise.all(promises);
   grid.cells.forEach(cell => {
@@ -113,7 +112,7 @@ async function slideTiles(groupedCells) {
   });
 }
 
-function slideTilesInGroup(group, promises) {
+function moveTilesInGroup(group, promises) {
   for (let i = 1; i < group.length; i++) {
     if (group[i].isEmpty()) {
       continue;
