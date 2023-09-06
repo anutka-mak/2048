@@ -1,11 +1,5 @@
 export class Cell {
-    cell: HTMLElement;
-    x: number;
-    y: number;
-    score: number;
-    mergedScore: number;
-
-    constructor(gridElement: HTMLElement, x: number, y: number, score: number) {
+    constructor(gridElement, x, y, score) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
         gridElement.append(cell);
@@ -16,7 +10,7 @@ export class Cell {
         this.mergedScore = 0;
     }
 
-    linkTile(tile: number) {
+    linkTile(tile) {
         tile.setXY(this.x, this.y);
         this.linkedTile = tile;
     }
@@ -36,7 +30,7 @@ export class Cell {
         return !this.linkedTile;
     }
 
-    linkTileForMerge(tile: number) {
+    linkTileForMerge(tile) {
         tile.setXY(this.x, this.y);
         this.linkedTileForMerge = tile;
     }
@@ -49,7 +43,7 @@ export class Cell {
         return !!this.linkedTileForMerge;
     }
 
-    canAccept(newTile: number) {
+    canAccept(newTile) {
         return (
             this.isEmpty() ||
             (!this.hasTileForMerge() && this.linkedTile.value === newTile.value)

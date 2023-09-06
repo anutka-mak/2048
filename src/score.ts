@@ -1,23 +1,24 @@
 export class Score {
     score: number;
-    scoreElement: HTMLElement;
+    scoreElement: HTMLElement | null;
 
     constructor() {
         this.score = 0;
         this.scoreElement = document.getElementById('score');
-        this.updateScoreDisplay();
+        this.updateDisplay();
     }
 
-    private addScore(points: number): void {
+    public addScore(points: number): void {
         this.score += points;
-        this.updateScoreDisplay();
+        this.updateDisplay();
     }
-    private updateScoreDisplay(): void {
+
+    public updateDisplay(): void {
         this.scoreElement.textContent = this.score.toString();
     }
 
-    private resetScore(): void {
+    public reset(): void {
         this.score = 0;
-        this.updateScoreDisplay();
+        this.updateDisplay();
     }
 }
